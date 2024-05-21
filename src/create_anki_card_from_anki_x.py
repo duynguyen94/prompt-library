@@ -10,30 +10,50 @@ subject: {subject}
 ```
 Flashcard should start with `[<subject>]`, 
 card types support: cloze and basic, 
-response in format to import into Anki
+response in text file to import into Anki
 """
 
 if __name__ == '__main__':
-    subject = "Use case diagram"
+    subject = "Kafka - Delivery Semantic"
     content = """
-A set of actions (called use cases) that a system should or can perform in collaboration with one or more 
-external users of the system (called actors). use case should provide some observable and valuable result to the actors
+## Delivery semantics
 
-Characteristics
-- Use Case Diagrams describe the high-level functional behavior of the system.
-- It answers what system does from the user point of view.
-- Use case answers ‘What will the system do?’ and at the same time tells us 'What will the system NOT do?'.
+### Producer option to check message write as successful
+- **Async**
+  - fire-and-forget approach
+  - Producer sends a message to Kafka and does not wait for acknowledgment from the server, considered successful the moment the request is sent out.
+  - the best performance on writing data without guarantee can be made that the server has received the record
 
-Components
-- System boundary - defines the scope and limits of the system, shown as a rectangle that 
-spans all use cases of the system.
-- Actors - an entity who performs specific actions, the actual business roles of the users in a given system.
-An actor interacts with a use case of the system
-- Use Case - business functionality, list the discrete business functionality specified in the problem statement.
-- Include relationship - represents an invocation of one use case by another use case, like one function being 
-called by another function.
-- Extend relationship - signifies that the extended use case will work exactly like the base use case, except that some 
-new steps will be inserted in the extended use case
+- **Committed to Leader**
+  - Waits for an acknowledgment from the leader.
+  - Slower than the 'Async' option, as the data has to be written on disk on the leader
+  - The leader will respond without waiting for acknowledgments from the followers.
+    - the record will be lost if the leader crashes immediately after acknowledging the producer but before the followers have replicated it.
+
+- **Committed to Leader and Quorum**
+  - leader will wait for the full set of in-sync replicas to acknowledge the record
+  - the slowest write but guarantees that the record will not be lost as long as at least one in-sync replica remains alive
+
+### Consumer delivery options to ensure consistency
+- **At-most-once**
+  - a message is delivered a maximum of one time only, might be lost
+  - Consumer receiving a message, commit (or increment) the offset to the broker.
+  - If the consumer crashes before fully consuming the message, that message will be lost
+    - when the consumer restarts, it will receive the next message from the last committed offset.
+
+- **At-least-once**
+  - a message might be delivered more than once, but no message should be lost
+  - Use case: consumer receives a message from Kafka, it does not immediately commit the offset, it waits till it completes the processing
+  - if the consumer crashes after processing the message but before committing the offset, it has to reread the message upon restart.
+    - the consumer never committed the offset to the broker, the broker will redeliver the same message
+  - duplicate message delivery could happen in such a scenario.
+
+- **Exactly-once**
+  - each message is delivered once and only once
+  - the consumer puts the message processing and the offset increment in one transaction, ensure that the offset increment will happen only if the whole transaction is complete
+    - If the consumer crashes while processing, the transaction will be rolled back, the offset will not be incremented
+  - This option leads to no data duplication and no data loss but can lead to decreased throughput.
+
 """
     print(PROMPT.format(content=content, subject=subject))
 

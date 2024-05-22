@@ -8,29 +8,25 @@ subject: {subject}
 {content}
 
 ```
-Flashcard should start with `[<subject>]`, 
+Each card must have prefix `[<subject>]`, 
 card types must include: cloze and basic, 
-response in text file to import into Anki
+generate cloze import file and basic import file
 """
 
 if __name__ == '__main__':
-    subject = "Kafka - Consumer Group"
-    content = """
-## Kafka workflow for consumer group
+    subject = "DB - Control File"
+    content = """## Control File in Oracle DB
 
-1. **Producers**: Publish messages on a topic.
-2. **Message Storage**: Kafka stores messages in the topic's partitions.
-3. **Single Consumer**: Initially, one consumer subscribes to a topic (e.g., Topic-01) with a specific Group ID (e.g., Group-1), and Kafka handles it like pub-sub messaging.
-4. **Multiple Consumers**: When a new consumer with the same Group ID subscribes to the same topic:
-   - Kafka switches to share mode.
-   - Messages are distributed among the group consumers, with each message being consumed by only one group member.
-   - Messages are retained after consumption.
-5. **Consumer-Partition Assignment**:
-   - Message distribution continues until the number of consumers equals the number of partitions.
-   - If consumers exceed partitions, new consumers wait until a partition becomes available.
-6. **Operation Mode**: This setup operates similarly to queue-based messaging, but messages are not deleted after consumption.
+- A control file is a small binary file that records the physical structure of the database
+  - includes:
+    - The database name
+    - Names and locations of associated datafiles and online redo log files
+    - The timestamp of the database creation
+    - The current log sequence number
+    - Checkpoint information
 
-
+- When an instance of an ORACLE database is started, its control file is used to identify the database and redo log files that must be opened for database operation to proceed
+  - Control file also used in database recovery
 """
     print(PROMPT.format(content=content, subject=subject))
 
